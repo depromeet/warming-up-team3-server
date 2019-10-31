@@ -53,11 +53,13 @@ class PostListModelSerializer(serializers.ModelSerializer):
     postTitle = serializers.CharField(source='title')
     postGoalNum = serializers.IntegerField(source='goal_num')
     postProductPrice = serializers.IntegerField(source='price')
+    postSoboonPrice = serializers.IntegerField(source='soboon_price')
     postClosingTime = serializers.DateTimeField(source='closing_time')
 
     class Meta:
         model = Post
-        fields = ('postId', 'postTitle', 'postGoalNum', 'postProductPrice','postClosingTime')
+        fields = ('postId', 'postTitle', 'postGoalNum',
+                  'postProductPrice','postSoboonPrice','postClosingTime')
 
 # 글 상세 보기
 class PostDetailModelSerializer(serializers.ModelSerializer):
@@ -82,12 +84,24 @@ class PostDetailModelSerializer(serializers.ModelSerializer):
                   'postShippingAddress', 'postClosingTime', 'postFinishedTime',
                   'postStatus', 'postCreatedAt'
                   )
-# 참여 모델
-# class JoinModelSerializer(serializers.ModelSerializer):
-#     postId = serializers.IntegerField(source='post_id')
-#     participant_id = serializers.IntegerField(source='participant_id')
-#
-#     class Meta:
-#         model = Join
-#         fields = ('')
+
+# 각자 글 참여 개수 가져오기
+class JoinCountModelSerializer(serializers.ModelSerializer):
+    join_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Join
+        fields = ('id', 'name', 'user_count')
+
+    def get_join_count(self, obj):
+        return obj.user_set.count()
+
+# 참여 리스트 가져오기
+class JoinModelSerializer(serializers.ModelSerializer):
+    postId = serializers.IntegerField(source='post_id')
+    participantId = serializers.IntegerField(source='participant_id')
+
+    class Meta:
+        model = Join
+        fields = ('postId','participantId')
 

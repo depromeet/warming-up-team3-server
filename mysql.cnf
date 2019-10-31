@@ -1,0 +1,6 @@
+#mysql.cnf
+[client]
+database = soboon
+host = 127.0.0.1
+user = root
+password = qwer1234

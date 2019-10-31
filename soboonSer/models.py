@@ -23,7 +23,7 @@ class User(models.Model):
     email = models.CharField(max_length=254, null=False, unique=True) # 사용자 이메일
     name  = models.CharField(max_length=45, null=False) # 사용자 이름
     pwd = models.CharField(max_length=100, null=True) # 사용자 비밀번
-    token = models.CharField(max_length=254) # 토큰
+    token = models.CharField(max_length=254, null=True) # 토큰
     telephone = models.CharField(max_length=11) # 전화번호
     legion = models.CharField(max_length=254) # 지역
     profile_image = models.TextField(null=True,blank=True) # 사용자 프로필 이미지 URL (없으면 빈 스트링 돌려주기)
@@ -59,7 +59,7 @@ class Post(models.Model):
     soboon_price = models.IntegerField(null=False, default=0) # 소분 가격
     shipping_address = models.TextField(blank=False) # 수령 장소
     closing_time = models.DateTimeField(null=False) # 마감 시각
-    finished_time = models.DateTimeField(blank=True) # 완료 시각
+    finished_time = models.DateTimeField(blank=True, null=True) # 완료 시각
     status = models.CharField(max_length=254,null=False) # 상태
     created_time = models.DateTimeField(auto_now_add=True, editable=False, blank=True)  # 본문 생성 시각
     modified_time = models.DateTimeField(auto_now=True, null=True, blank=True)  # 본문 변경 시각
