@@ -32,9 +32,8 @@ class User(models.Model):
     deleted_time = models.DateTimeField(auto_now=True, null=True, blank=True) # 사용자 정보 삭제 시각
 
     class Meta:
-        ordering = ['-created_time',]
-        verbose_name = '이용자'
-        verbose_name_plural = '이용자들'
+        unique_together = ['email', 'telephone']
+        ordering = ['-created_time']
 
 # 카테고리
 class Category(models.Model):
@@ -67,16 +66,21 @@ class Post(models.Model):
     writer = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='posts',
         null=False
     ) # 작성자 id
     category = models.ForeignKey(
         Category,
         on_delete=models.CASCADE,
+        related_name='post_categories',
         null=False
     ) # 카테고리 id
 
     class Meta:
         ordering = ['-created_time',]
+
+    def __str__(self):
+        return '%d : %s' % (self.id, self.title)
 
 # 댓글
 class Comment(models.Model):
@@ -88,45 +92,59 @@ class Comment(models.Model):
     writer = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='comments',
         null=False
     ) # 작성자 id
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
+        related_name='post_comments',
         null=False
     ) # 본문 id
 
     class Meta:
-        ordering = ['-created_time', 'post_id',]
+        ordering = ['created_time', 'post_id',]
 
 # 참여
 class Join(models.Model):
     participant = models.ForeignKey(
         User,
+        related_name='joiner',
         on_delete=models.CASCADE,
         null=False
     ) # 사용자 id
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
+        related_name='join_posts',
         null=False
     ) # 본문 id
     created_time = models.DateTimeField(auto_now_add=True, editable=False, blank=True)  # 댓글 생성 시각
     modified_time = models.DateTimeField(auto_now=True,null=True, blank=True)  # 댓글 변경 시각
     deleted_time = models.DateTimeField(auto_now=True, null=True, blank=True)  # 댓글 삭제 시각
 
+    class Meta:
+        unique_together = ['participant', 'post']
+        ordering = ['-created_time']
+
 # 찜
 class Like(models.Model):
     liker = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
+        related_name='likers',
         null=False
     ) # 사용자 id
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
+        related_name='like_posts',
         null=False
     ) # 본문 id
     created_time = models.DateTimeField(auto_now_add=True, editable=False, blank=True)  # 댓글 생성 시각
     modified_time = models.DateTimeField(auto_now=True, null=True, blank=True)  # 댓글 변경 시각
     deleted_time = models.DateTimeField(auto_now=True, null=True, blank=True)  # 댓글 삭제 시각
+
+    class Meta:
+        unique_together = ['liker', 'post']
+        ordering = ['-created_time']

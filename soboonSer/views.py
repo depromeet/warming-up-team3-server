@@ -4,6 +4,7 @@
 # # Create your views here.
 from django.conf import settings
 import json, os, base64
+import logging
 #
 from datetime import datetime
 #
@@ -16,6 +17,8 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework import mixins
+from rest_framework import generics
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import AllowAny,IsAuthenticated
@@ -36,8 +39,12 @@ from soboonSer.serializers import (
     MyPageModelGetSerializer,
     CategoryModelSerializer,
     PostListModelSerializer,
-    PostDetailModelSerializer
+    PostDetailModelSerializer,
+    JoinCountModelSerializer,
+    UserJoinedPostListModelSerializer,
+    UserPostsListModelSerialzier
     )
+
 
 from rest_framework.authtoken.models import Token
 from django.http import Http404
@@ -51,6 +58,8 @@ from rest_framework.parsers import (
     FormParser,
     JSONParser
 )
+
+logging = logging.getLogger(__name__)
 
 # 카테고리 가져오기
 class CategoryListAPIView(APIView):
@@ -69,7 +78,24 @@ class CategoryListAPIView(APIView):
         except:
             return Response({ 'err_detail': 'data를 불러오지 못했습니다'}, status=status.HTTP_200_OK )
 
-# 피드 가져오기
+# 마이페이지 - 유저 정보 불러오기 // TODO 내 소분 개수 및 참여 소분 개수 및 찜한 소분 개수 가져와야 함
+class MyPageUserListAPIView(APIView):
+    permission_classes = (AllowAny, )
+
+    # [GET] /api/users/{userId} 마이페이지 유저 정보 가져오기
+    def get_object(self, userId):
+        try:
+            return User.objects.get(pk=userId)
+        except User.DoesNotExist:
+            raise Http404
+
+    def get(self, request, userId):
+        user_query = self.get_object(userId)
+        serializer = MyPageModelGetSerializer(user_query)
+        return Response(serializer.data)
+
+
+# 피드 가져오기 // TODO 참여 정보 불러오기 아직
 class FeedListAPIView(APIView):
     """
         Feed List
@@ -79,7 +105,7 @@ class FeedListAPIView(APIView):
     # [GET] /api/posts 글 리스트 가져오기
     def get(self,request,*args,**kwargs):
         try:
-            post_queryset = Post.objects.order_by('-created_time')[:10]
+            post_queryset = Post.objects.all().order_by('-created_time')
             post_serializer = PostListModelSerializer(post_queryset, many=True)
             return Response(
                 {
@@ -87,7 +113,83 @@ class FeedListAPIView(APIView):
                     'post': post_serializer.data
                 }, status=status.HTTP_200_OK)
         except:
-            return Response({'err_detail': 'data를 불러오지 못했습니다'}, status=status.HTTP_200_OK)
+            return Response(post_serializer.data)
+            # return Response({'err_detail': 'data를 불러오지 못했습니다'}, status=status.HTTP_200_OK)
+        # querylist = [
+        #     {
+        #         'querylist': Post.objects.all().order_by('-created_time')
+        #         'serializer_class': PostListModelSerializer,
+        #         'label' : 'posts'
+        #     }
+        # ]
+# 게시글 상세 보기 // TODO 참여 정보 불러오기 아직
+class PostDetailAPIView(APIView):
+    def get_object(self,postId):
+        try:
+            return Post.objects.get(pk=postId)
+        except Post.DoesNotExist:
+            raise Http404
+
+    def get(self, request, postId):
+        post = self.get_object(postId)
+        serializer = PostDetailModelSerializer(post)
+        return Response(serializer.data)
+
+class JoinCountAPIView(APIView):
+    # def get_object(self, postId):
+    #     try:
+    #         return Join.objects.all()
+    #     except Join.DoesNotExist:
+    #         raise Http404
+
+    def get(self,request, postId):
+        # join = self.get_object(postId)
+        query_set = Join.objects.all()
+        serializer = JoinCountModelSerializer(query_set, many=True)
+        return Response(serializer.data)
+
+# 유저가 작성한 글 가져오기
+class UserPostsListAPIView(APIView):
+    permission_classes = (AllowAny, )
+
+    def get_object(self, userId):
+        try:
+            return User.objects.get(pk=userId)
+        except User.DoesNotExist:
+            raise Http404
+
+    def get(self, request, userId):
+        user_query = self.get_object(userId)
+        user_posts_serializer = UserPostsListModelSerialzier(user_query)
+        return Response(user_posts_serializer.data)
+
+# 유저가 참여한 내역 가져오기 // TODO 참여 정보 불러오기 아직
+class UserJoinListAPIView(APIView):
+    permission_classes = (AllowAny, )
+
+    def get_object(self, userId):
+        try:
+            return User.objects.get(pk=userId)
+        except User.DoesNotExist:
+            raise Http404
+
+    def get(self, request, userId):
+        user_join_posts = self.get_object(userId)
+        serializer = UserJoinedPostListModelSerializer(user_join_posts)
+        return Response(serializer.data)
+
+    # # [GET] /api/posts 글 리스트 가져오기
+    # def get(self,request,*args,**kwargs):
+    #     try:
+    #         user_join_queryset = Join.objects.filter(participant=userId)
+    #         post_serializer = UserJoinPostModelSerializer(user_join_queryset, many=True)
+    #         return Response(
+    #             {
+    #                 'id': 0,
+    #                 'post': post_serializer.data
+    #             }, status=status.HTTP_200_OK)
+    #     except:
+    #         return Response(post_serializer.data)
 
 # class UserSignUpAPIView(APIView):
 #     """
